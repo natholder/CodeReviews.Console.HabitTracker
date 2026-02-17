@@ -24,51 +24,54 @@ namespace HabitTracker
             int number;
             double miles = 0.0;
             DateTime date = new DateTime();
+            int rows = 0;
+
             try
             {
                 using var connection = new SqliteConnection(connectionString);
                 connection.Open();
                 Console.WriteLine($"Database {dbFileName} created or opened successfully.");
                 CreateTable(connection);
+
+                while (running)
+                {
+
+                    Console.WriteLine(menuText);
+                    ShowMenu();
+                    userInput = Console.ReadLine();
+                    if (int.TryParse(userInput, out number) && number > 0 && number <= 6)
+                    {
+                        switch (userInput)
+                        {
+                            case "1":
+                                Console.WriteLine("view");
+                                break;
+                            case "2":
+                                miles = GetMiles(miles, userInput);
+                                date = GetDate(date, userInput);
+                                rows = Insert(connection, miles, date);
+                                Console.WriteLine($"{rows} rows inserted!");
+                                break;
+                            case "3":
+                                Console.WriteLine("update");
+                                break;
+                            case "4":
+                                Console.WriteLine("delete");
+                                break;
+                            default:
+                                running = false;
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid input. Please try again.");
+                    }
+                }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"An error occurred: {ex.Message}");
-            }
-
-            while (running)
-            {
-
-                Console.WriteLine(menuText);
-                ShowMenu();
-                userInput = Console.ReadLine();
-                if (int.TryParse(userInput, out number) && number > 0 && number <= 6)
-                {
-                    switch (userInput)
-                    {
-                        case "1":
-                            Console.WriteLine("view");
-                            break;
-                        case "2":
-                            miles = GetMiles(miles, userInput);
-                            date = GetDate(date, userInput);
-                            Console.WriteLine(date.Date);
-                            break;
-                        case "3":
-                            Console.WriteLine("update");
-                            break;
-                        case "4":
-                            Console.WriteLine("delete");
-                            break;
-                        default:
-                            running = false;
-                            break;
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("Invalid input. Please try again.");
-                }
             }
         }
 
@@ -82,11 +85,21 @@ namespace HabitTracker
             Miles INT
             )";
 
-            using (var command = new SqliteCommand(CreateTableQuery, connection))
-            {
-                command.ExecuteNonQuery();
-                Console.WriteLine("Table 'Habits' created or already exists.");
-            }
+            using var command = new SqliteCommand(CreateTableQuery, connection);
+            command.ExecuteNonQuery();
+            Console.WriteLine("Table 'Habits' created or already exists.");
+        }
+
+        static int Insert(SqliteConnection connection, double miles, DateTime date)
+        {
+            string InsertRowQuery = @"
+            INSERT INTO Habits (Date, Miles) VALUES (@date, @miles)";
+            using var command = new SqliteCommand(InsertRowQuery, connection);
+            command.Parameters.AddWithValue("@date", date);
+            command.Parameters.AddWithValue("@miles", miles);
+            int rowsAffected = command.ExecuteNonQuery();
+
+            return rowsAffected;
         }
 
         static void ShowMenu()
@@ -96,20 +109,6 @@ namespace HabitTracker
             Console.WriteLine("3. Update");
             Console.WriteLine("4. Delete");
             Console.WriteLine("5. Quit");
-        }
-
-        static int Insert()
-        {
-
-
-            string CreateTableQuery = @"
-            CREATE TABLE IF NOT EXISTS Habits (
-            Id INTEGER PRIMARY KEY AUTOINCREMENT,
-            Date DATETIME,
-            Miles INT
-            )";
-
-            return 0;
         }
 
         static double GetMiles(double miles, string? input)
@@ -122,7 +121,7 @@ namespace HabitTracker
         static DateTime GetDate(DateTime date, string? input)
         {
 
-            Console.WriteLine("What day was your run? (tyoe td for today's date)");
+            Console.WriteLine("What day was your run? (type td for today's date)");
             input = Console.ReadLine();
             if (input == "td")
             {

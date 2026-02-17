@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography.X509Certificates;
@@ -6,6 +7,13 @@ using Microsoft.Data.Sqlite;
 
 namespace HabitTracker
 {
+
+    public class Runs
+    {
+        public int Id { get; set; }
+        public DateTime Date { get; set; }
+        public double Miles { get; set; }
+    }
     class Program
     {
         static string dbFileName = "HabitTracker.db";
@@ -51,7 +59,7 @@ namespace HabitTracker
                     switch (userInput)
                     {
                         case "1":
-                            Console.WriteLine("view");
+                            SelectRecords();
                             break;
                         case "2":
                             Insert();
@@ -79,7 +87,7 @@ namespace HabitTracker
             CREATE TABLE IF NOT EXISTS Habits (
             Id INTEGER PRIMARY KEY AUTOINCREMENT,
             Date DATETIME,
-            Miles INT
+            Miles DOUBLE
             )";
 
             using var command = new SqliteCommand(CreateTableQuery, connection);
@@ -98,6 +106,47 @@ namespace HabitTracker
             insert.ExecuteNonQuery();
             connection.Close();
         }
+
+        static void SelectRecords()
+        {
+            Console.Clear();
+            using var connection = new SqliteConnection(connectionString);
+            connection.Open();
+            var select = connection.CreateCommand();
+            select.CommandText = $"SELECT * FROM Habits";
+            List<Runs> tableData = [];
+            SqliteDataReader reader = select.ExecuteReader();
+            if (reader.HasRows)
+            {
+                while (reader.Read())
+                {
+                    tableData.Add(
+                        new Runs
+                        {
+                            Id = reader.GetInt32(0),
+                            Date = reader.GetDateTime(1),
+                            Miles = reader.GetDouble(2)
+                        }
+                    );
+                }
+            }
+            else
+            {
+                Console.WriteLine("No rows found.");
+            }
+            connection.Close();
+
+            Console.WriteLine("---------------------------------------");
+            Console.WriteLine("   Id    |   Date        |    Miles");
+            Console.WriteLine("---------------------------------------");
+            foreach (var row in tableData)
+            {
+                Console.WriteLine($"|   {row.Id}   |   {row.Date.ToString("MM-dd-yyyy")}    |    {row.Miles}      |");
+            }
+            Console.WriteLine("---------------------------------------");
+
+        }
+
 
         static int Delete(SqliteConnection connection, DateTime date)
         {
@@ -149,7 +198,7 @@ namespace HabitTracker
                 return GetDate(); // Recursive call for empty input
             }
 
-            if (input.ToLower() == "td")
+            if (input?.ToLower() == "td")
             {
                 return DateTime.Today;
             }

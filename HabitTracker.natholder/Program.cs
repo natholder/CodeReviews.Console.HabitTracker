@@ -68,7 +68,7 @@ namespace HabitTracker
                             Console.WriteLine("update");
                             break;
                         case "4":
-                            Console.WriteLine("delete");
+                            Delete();
                             break;
                         default:
                             running = false;
@@ -147,15 +147,23 @@ namespace HabitTracker
 
         }
 
-
-        static int Delete(SqliteConnection connection, DateTime date)
+        //TODO: finish delete method
+        static void Delete()
         {
-            string DeleteRowsQuery = @"
-            DELETE FROM Habits WHERE date = @date";
-            using var command = new SqliteCommand(DeleteRowsQuery, connection);
-            command.Parameters.AddWithValue("@date", date);
-            int rowsAffected = command.ExecuteNonQuery();
-            return rowsAffected;
+            DateTime date = GetDate();
+            double miles = GetMiles();
+            using var connection = new SqliteConnection(connectionString);
+            connection.Open();
+            var insert = connection.CreateCommand();
+            insert.CommandText = $"DELETE FROM Habits WHERE Id = {id}";
+            insert.ExecuteNonQuery();
+            connection.Close();
+        }
+
+        //TODO: Start and finish update method
+        static void Update()
+        {
+
         }
 
 

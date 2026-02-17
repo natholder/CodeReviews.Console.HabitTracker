@@ -8,74 +8,71 @@ namespace HabitTracker
 {
     class Program
     {
-
+        static string dbFileName = "HabitTracker.db";
+        static string connectionString = $"Data Source ={dbFileName}";
         static void Main(string[] args)
         {
-            string dbFileName = "HabitTracker.db";
-            string connectionString = $"Data Source ={dbFileName}";
-            string menuText = @"
-    __  ____ __             ______                __            
-   /  |/  (_) /__  _____   /_  __/________ ______/ /_____  _____
-  / /|_/ / / / _ \/ ___/    / / / ___/ __ `/ ___/ //_/ _ \/ ___/
- / /  / / / /  __(__  )    / / / /  / /_/ / /__/ ,< /  __/ /    
-/_/  /_/_/_/\___/____/    /_/ /_/   \__,_/\___/_/|_|\___/_/";
-            string? userInput;
-            bool running = true;
-            int number;
-            double miles = 0.0;
-            DateTime date = new DateTime();
-            int rows = 0;
+            initDB();
+            MenuLoop();
+        }
 
+        static void initDB()
+        {
             try
             {
                 using var connection = new SqliteConnection(connectionString);
                 connection.Open();
                 Console.WriteLine($"Database {dbFileName} created or opened successfully.");
                 CreateTable(connection);
-
-                while (running)
-                {
-
-                    Console.WriteLine(menuText);
-                    ShowMenu();
-                    userInput = Console.ReadLine();
-                    if (int.TryParse(userInput, out number) && number > 0 && number <= 6)
-                    {
-                        switch (userInput)
-                        {
-                            case "1":
-                                Console.WriteLine("view");
-                                break;
-                            case "2":
-                                miles = GetMiles(miles, userInput);
-                                date = GetDate(date, userInput);
-                                rows = Insert(connection, miles, date);
-                                Console.WriteLine($"{rows} rows inserted!");
-                                break;
-                            case "3":
-                                Console.WriteLine("update");
-                                break;
-                            case "4":
-                                Console.WriteLine("delete");
-                                break;
-                            default:
-                                running = false;
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine("Invalid input. Please try again.");
-                    }
-                }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"An error occurred: {ex.Message}");
             }
         }
-
-
+        static void MenuLoop()
+        {
+            string menuText = @"
+    __  ____ __             ______                __            
+   /  |/  (_) /__  _____   /_  __/________ ______/ /_____  _____
+  / /|_/ / / / _ \/ ___/    / / / ___/ __ `/ ___/ //_/ _ \/ ___/
+ / /  / / / /  __(__  )    / / / /  / /_/ / /__/ ,< /  __/ /    
+/_/  /_/_/_/\___/____/    /_/ /_/   \__,_/\___/_/|_|\___/_/";
+            bool running = true;
+            string? userInput;
+            int number;
+            Console.WriteLine(menuText);
+            while (running)
+            {
+                ShowMenu();
+                userInput = Console.ReadLine();
+                if (int.TryParse(userInput, out number) && number > 0 && number <= 6)
+                {
+                    switch (userInput)
+                    {
+                        case "1":
+                            Console.WriteLine("view");
+                            break;
+                        case "2":
+                            Insert();
+                            break;
+                        case "3":
+                            Console.WriteLine("update");
+                            break;
+                        case "4":
+                            Console.WriteLine("delete");
+                            break;
+                        default:
+                            running = false;
+                            break;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Invalid input. Please try again.");
+                }
+            }
+        }
         static void CreateTable(SqliteConnection connection)
         {
             string CreateTableQuery = @"
@@ -90,17 +87,28 @@ namespace HabitTracker
             Console.WriteLine("Table 'Habits' created or already exists.");
         }
 
-        static int Insert(SqliteConnection connection, double miles, DateTime date)
+        static void Insert()
         {
-            string InsertRowQuery = @"
-            INSERT INTO Habits (Date, Miles) VALUES (@date, @miles)";
-            using var command = new SqliteCommand(InsertRowQuery, connection);
-            command.Parameters.AddWithValue("@date", date);
-            command.Parameters.AddWithValue("@miles", miles);
-            int rowsAffected = command.ExecuteNonQuery();
+            DateTime date = GetDate();
+            double miles = GetMiles();
+            using var connection = new SqliteConnection(connectionString);
+            connection.Open();
+            var insert = connection.CreateCommand();
+            insert.CommandText = $"INSERT INTO Habits (Date, Miles) VALUES ('{date}', {miles})";
+            insert.ExecuteNonQuery();
+            connection.Close();
+        }
 
+        static int Delete(SqliteConnection connection, DateTime date)
+        {
+            string DeleteRowsQuery = @"
+            DELETE FROM Habits WHERE date = @date";
+            using var command = new SqliteCommand(DeleteRowsQuery, connection);
+            command.Parameters.AddWithValue("@date", date);
+            int rowsAffected = command.ExecuteNonQuery();
             return rowsAffected;
         }
+
 
         static void ShowMenu()
         {
@@ -111,31 +119,48 @@ namespace HabitTracker
             Console.WriteLine("5. Quit");
         }
 
-        static double GetMiles(double miles, string? input)
+        static double GetMiles()
         {
-            Console.WriteLine("How many miles?");
+            double miles;
+            string? input;
+            Console.WriteLine("How many miles did you run?");
             input = Console.ReadLine();
-            return double.TryParse(input, out miles) == false ? -1 : miles;
-        }
-
-        static DateTime GetDate(DateTime date, string? input)
-        {
-
-            Console.WriteLine("What day was your run? (type td for today's date)");
-            input = Console.ReadLine();
-            if (input == "td")
+            if (double.TryParse(input, out miles))
             {
-                date = DateTime.Today;
-                return date;
-            }
-            else if (DateTime.TryParse(input, out date))
-            {
-                return date;
+                return miles;
             }
             else
             {
-                return DateTime.MinValue;
+                Console.WriteLine("Please enter a valid number");
+                return GetMiles();
             }
+        }
+
+        static DateTime GetDate()
+        {
+            string? input;
+            DateTime date;
+            Console.WriteLine("What day was your run? (type 'td' for today's date, or enter date as MM/DD/YYYY):");
+            input = Console.ReadLine();
+
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                Console.WriteLine("Please enter a valid date or 'td' for today.");
+                return GetDate(); // Recursive call for empty input
+            }
+
+            if (input.ToLower() == "td")
+            {
+                return DateTime.Today;
+            }
+
+            if (DateTime.TryParse(input, out date))
+            {
+                return date;
+            }
+
+            Console.WriteLine("Invalid date format. Please try again (e.g., 02/16/2026) or type 'td' for today.");
+            return GetDate(); // Recursive call for invalid date
         }
     }
 }

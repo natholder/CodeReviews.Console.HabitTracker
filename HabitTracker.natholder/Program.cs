@@ -1,9 +1,4 @@
-﻿using System;
-using System.ComponentModel.Design;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography.X509Certificates;
-using Microsoft.Data.Sqlite;
+﻿using Microsoft.Data.Sqlite;
 
 namespace HabitTracker
 {
@@ -20,11 +15,11 @@ namespace HabitTracker
         static string connectionString = $"Data Source ={dbFileName}";
         static void Main(string[] args)
         {
-            initDB();
+            InitDB();
             MenuLoop();
         }
 
-        static void initDB()
+        static void InitDB()
         {
             try
             {
@@ -168,7 +163,6 @@ namespace HabitTracker
             connection.Close();
         }
 
-        //TODO: Start and finish update method
         static void Update()
         {
             Console.Clear();
@@ -180,7 +174,7 @@ namespace HabitTracker
             Console.WriteLine("Enter new values for this record:");
             DateTime newDate = GetDate();
             double newMiles = GetMiles();
-            
+
             using var connection = new SqliteConnection(connectionString);
             connection.Open();
             var update = connection.CreateCommand();
@@ -188,7 +182,7 @@ namespace HabitTracker
             update.Parameters.AddWithValue("@date", newDate);
             update.Parameters.AddWithValue("@miles", newMiles);
             int rowsAffected = update.ExecuteNonQuery();
-            
+
             if (rowsAffected > 0)
             {
                 Console.WriteLine($"Successfully updated record with ID: {id}");
@@ -197,7 +191,7 @@ namespace HabitTracker
             {
                 Console.WriteLine($"No record found with ID: {id}");
             }
-            
+
             connection.Close();
         }
 

@@ -65,7 +65,7 @@ namespace HabitTracker
                             Insert();
                             break;
                         case "3":
-                            Console.WriteLine("update");
+                            Update();
                             break;
                         case "4":
                             Delete();
@@ -171,7 +171,34 @@ namespace HabitTracker
         //TODO: Start and finish update method
         static void Update()
         {
+            Console.Clear();
+            SelectRecords();
 
+            Console.WriteLine("What is the id of the record you want to update?");
+            int id = GetId();
+
+            Console.WriteLine("Enter new values for this record:");
+            DateTime newDate = GetDate();
+            double newMiles = GetMiles();
+            
+            using var connection = new SqliteConnection(connectionString);
+            connection.Open();
+            var update = connection.CreateCommand();
+            update.CommandText = $"UPDATE Habits SET Date = @date, Miles = @miles WHERE Id = {id}";
+            update.Parameters.AddWithValue("@date", newDate);
+            update.Parameters.AddWithValue("@miles", newMiles);
+            int rowsAffected = update.ExecuteNonQuery();
+            
+            if (rowsAffected > 0)
+            {
+                Console.WriteLine($"Successfully updated record with ID: {id}");
+            }
+            else
+            {
+                Console.WriteLine($"No record found with ID: {id}");
+            }
+            
+            connection.Close();
         }
 
 

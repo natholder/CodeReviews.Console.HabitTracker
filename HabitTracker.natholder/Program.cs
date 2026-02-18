@@ -147,16 +147,24 @@ namespace HabitTracker
 
         }
 
-        //TODO: finish delete method
         static void Delete()
         {
-            DateTime date = GetDate();
-            double miles = GetMiles();
+            int id = GetId();
             using var connection = new SqliteConnection(connectionString);
             connection.Open();
             var insert = connection.CreateCommand();
             insert.CommandText = $"DELETE FROM Habits WHERE Id = {id}";
-            insert.ExecuteNonQuery();
+            int rowsAffected = insert.ExecuteNonQuery();
+
+            if (rowsAffected > 0)
+            {
+                Console.WriteLine($"Successfully deleted record with ID: {id}");
+            }
+            else
+            {
+                Console.WriteLine($"No record found with ID: {id}");
+            }
+
             connection.Close();
         }
 
@@ -190,6 +198,23 @@ namespace HabitTracker
             {
                 Console.WriteLine("Please enter a valid number");
                 return GetMiles();
+            }
+        }
+
+        static int GetId()
+        {
+            int id;
+            string? input;
+            Console.WriteLine("Enter the id of the record you would like to delete.");
+            input = Console.ReadLine();
+            if (int.TryParse(input, out id))
+            {
+                return id;
+            }
+            else
+            {
+                Console.WriteLine("Please enter a valid number");
+                return GetId();
             }
         }
 

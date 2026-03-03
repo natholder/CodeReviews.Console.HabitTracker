@@ -49,7 +49,7 @@ namespace HabitTracker
             {
                 ShowMenu();
                 userInput = Console.ReadLine();
-                if (int.TryParse(userInput, out number) && number > 0 && number <= 6)
+                if (int.TryParse(userInput, out number) && number > 0 && number < 6)
                 {
                     switch (userInput)
                     {
@@ -65,8 +65,10 @@ namespace HabitTracker
                         case "4":
                             Delete();
                             break;
-                        default:
+                        case "5":
                             running = false;
+                            break;
+                        default:
                             break;
                     }
                 }
@@ -198,11 +200,13 @@ namespace HabitTracker
 
         static void ShowMenu()
         {
+            Console.WriteLine("------------------");
             Console.WriteLine("1. View");
             Console.WriteLine("2. Insert");
             Console.WriteLine("3. Update");
             Console.WriteLine("4. Delete");
             Console.WriteLine("5. Quit");
+            Console.WriteLine("------------------");
         }
 
         static double GetMiles()
